@@ -1,0 +1,8 @@
+arrays:
+  FlashArrays:
+    - MgmtEndPoint: "10.62.201.77"
+      APIToken: "23a938af-a880-df80-bdea-notreal"
+  FlashBlades:
+    - MgmtEndPoint: "10.62.64.20"
+      APIToken: "T-ab0ed3e0-5438-4485-9503-notreal"
+      NfsEndPoint: "10.62.64.200"
