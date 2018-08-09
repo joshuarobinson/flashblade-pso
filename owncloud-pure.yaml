@@ -1,0 +1,199 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    name: redis
+  selector:
+    app: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oc-redis
+spec:
+  selector:
+    matchLabels:
+      app: redis # has to match .spec.template.metadata.labels
+  serviceName: "redis"
+  template:
+    metadata:
+      labels:
+        app: redis # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: redis
+        image: webhippie/redis:latest
+        env:
+        - name: REDIS_DATABASES
+          value: "1"
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - name: oc-redis-vol
+          mountPath: /var/lib/redis
+  volumeClaimTemplates:
+  - metadata:
+      name: oc-redis-vol
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "pure-file"
+      resources:
+        requests:
+          storage: 1Ti
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  labels:
+    app: mariadb
+spec:
+  ports:
+  - port: 3306
+    name: mysql
+  selector:
+    app: mariadb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oc-mariadb
+spec:
+  selector:
+    matchLabels:
+      app: mariadb # has to match .spec.template.metadata.labels
+  serviceName: "mariadb"
+  template:
+    metadata:
+      labels:
+        app: mariadb # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: mariadb
+        image: webhippie/mariadb:latest
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "owncloud"
+        - name: MARIADB_USERNAME
+          value: "owncloud"
+        - name: MARIADB_PASSWORD
+          value: "owncloud"
+        - name: MARIADB_DATABASE
+          value: "owncloud"
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: oc-mysql-vol
+          mountPath: /var/lib/mysql
+        - name: oc-backup-vol
+          mountPath: /var/lib/backup
+  volumeClaimTemplates:
+  - metadata:
+      name: oc-mysql-vol
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "pure-block"
+      resources:
+        requests:
+          storage: 600Gi
+  - metadata:
+      name: oc-backup-vol
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "pure-file"
+      resources:
+        requests:
+          storage: 800Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: owncloud
+  labels:
+    app: owncloud
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    name: http
+  - port: 443
+    name: https
+  selector:
+    app: owncloud
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oc-owncloud
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: owncloud # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: owncloud # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: owncloud
+        image: owncloud/server:10.0
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "owncloud"
+        - name: OWNCLOUD_DOMAIN
+          value: "localhost"
+        - name: OWNCLOUD_DB_TYPE
+          value: "mysql"
+        - name: OWNCLOUD_DB_NAME
+          value: "owncloud"
+        - name: OWNCLOUD_DB_USERNAME
+          value: "owncloud"
+        - name: OWNCLOUD_DB_PASSWORD
+          value: "owncloud"
+        - name: OWNCLOUD_DB_HOST
+          value: "mariadb"
+        - name: OWNCLOUD_ADMIN_USERNAME
+          value: "admin"
+        - name: OWNCLOUD_ADMIN_PASSWORD
+          value: "admin"
+        - name: OWNCLOUD_REDIS_ENABLED
+          value: "true"
+        - name: OWNCLOUD_REDIS_HOST
+          value: "redis"
+        - name: OWNCLOUD_VOLUME_ROOT
+          value: "/mnt/data/owncloud"
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        volumeMounts:
+        - name: oc-files
+          mountPath: /mnt/data
+      volumes:
+      - name: oc-files
+        persistentVolumeClaim:
+          claimName: oc-files-claim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: oc-files-claim
+spec:
+  storageClassName: pure-file
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Ti

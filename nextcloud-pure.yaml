@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  labels:
+    app: nextcloud
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    name: http
+  selector:
+    app: nextcloud
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud # has to match .spec.template.metadata.labels
+  template:
+    metadata:
+      labels:
+        app: nextcloud # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: nextcloud
+        image: nextcloud
+        env:
+          - name: NEXTCLOUD_ADMIN_USER
+            value: "admin"
+          - name: NEXTCLOUD_ADMIN_PASSWORD
+            value: "admin"
+          - name: SQLITE_DATABASE
+            value: "nextcloud"
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nc-files
+          mountPath: /var/www/html/data
+      initContainers:
+      - name: install
+        image: busybox
+        command:
+        - sh
+        - '-c'
+        - 'chmod 770 /var/www/html/data && chown www-data /var/www/html/data'
+        volumeMounts:
+        - name: nc-files
+          mountPath: /var/www/html/data  
+      volumes:
+      - name: nc-files
+        persistentVolumeClaim:
+          claimName: nc-files-claim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nc-files-claim
+spec:
+  storageClassName: pure-file
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 15Ti

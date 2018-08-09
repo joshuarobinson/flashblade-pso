@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scratchspace
+spec:
+  replicas: 2  # Modify to increase number of collaborators
+  selector:
+    matchLabels:
+      app: scratchdepl
+  template:
+    metadata:
+      labels:
+        app: scratchdepl
+    spec:
+      volumes:
+      - name: scratchvol
+        persistentVolumeClaim:
+          claimName: scratchspace-claim # matches PVC name below
+      containers:
+      - name: myshell
+        image: ubuntu:latest
+        command: ["tail"]  # Trick for creating a pod that does nothing
+        args: ["-f", "/dev/null"]
+        volumeMounts:
+        - name: scratchvol
+          mountPath: /scratch  # Where the shared workspace lives.
+        resources:
+          requests:
+            memory: "8G"
+            cpu: "4"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: scratchspace-claim
+spec:
+  storageClassName: pure-file  # Use a filesystem to back volume
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Ti
