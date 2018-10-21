@@ -1,8 +1,24 @@
+# Notes on obtaining the values for this yaml file:
+
+# MgmtEndPoint : DNS/IP-address for mgmt (REST API calls) to 
+#                FlashArray and FlashBlade
+#                Get this by running (on FlashArray or Flashblade)"
+#                "purenetwork list vir0 --nvp" | grep Address | cut -f2 -d=
+#                (prefix this command with ssh user@fs-or-fb-ip)
+# APIToken :     The access token used for REST API authentication
+#                Get this by running (on FlashArray or Flashblade)
+#                "pureadmin list --nvp --api-token --expose" | grep "API Token=[^\*\*\*\*]" | cut -f2 -d=
+#                (prefix this command with ssh user@fs-or-fb-ip)
+# NFSEndPoint :  The Data VIP for Flashblade.
+#                Get this by running:
+#                "purenetwork list --nvp --service data" | grep "Address=" | head -1 | cut -f2 -d=
+#                (prefix this command with ssh user@fb-ip)
+
 arrays:
   FlashArrays:
-    - MgmtEndPoint: "10.62.201.77"
+    - MgmtEndPoint: "1.2.3.4"
       APIToken: "23a938af-a880-df80-bdea-notreal"
   FlashBlades:
-    - MgmtEndPoint: "10.62.64.20"
+    - MgmtEndPoint: "5.6.7.8"
       APIToken: "T-ab0ed3e0-5438-4485-9503-notreal"
-      NfsEndPoint: "10.62.64.200"
+      NFSEndPoint: "9.10.11.12"
