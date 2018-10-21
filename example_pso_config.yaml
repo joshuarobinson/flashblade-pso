@@ -4,7 +4,7 @@
 #                FlashArray and FlashBlade
 #                Get this by running (on FlashArray or Flashblade)"
 #                "purenetwork list vir0 --nvp" | grep Address | cut -f2 -d=
-#                (prefix this command with ssh user@fs-or-fb-ip)
+#                (prefix this command with ssh user@fa-or-fb-ip)
 # APIToken :     The access token used for REST API authentication
 #                Get this by running (on FlashArray or Flashblade)
 #                "pureadmin list --nvp --api-token --expose" | grep "API Token=[^\*\*\*\*]" | cut -f2 -d=
