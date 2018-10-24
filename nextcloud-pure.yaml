@@ -35,6 +35,8 @@ spec:
             value: "admin"
           - name: NEXTCLOUD_ADMIN_PASSWORD
             value: "admin"
+          - name: NEXTCLOUD_TRUSTED_DOMAINS
+            value: "10.62.204.250"  # Change to the IP address or domain that you will use to access NextCloud.
           - name: SQLITE_DATABASE
             value: "nextcloud"
         ports:
